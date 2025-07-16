@@ -1,0 +1,60 @@
+{
+  "name": "order_submission_workflow",
+  "description": "Workflow to submit order, track progress and complete order.",
+  "version": 1,
+  "inputParameters": [
+    "order_id"
+  ],
+  "tasks": [
+    {
+      "name": "submit_an_order_to_warehouse",
+      "taskReferenceName": "submit_an_order_to_warehouse_ref",
+      "description": "Task to fetch order details and submit to warehouse.",
+      "type": "SIMPLE",
+      "inputParameters": {
+        "order_id": "${workflow.input.order_id}"
+      }
+    },
+    {
+      "name": "poll_vendor_for_product",
+      "taskReferenceName": "poll_vendor_for_product_ref",
+      "type": "HTTP_POLL",
+      "inputParameters": {
+        "http_request": {
+          "uri": "https://05b8-205-210-143-170.ngrok-free.app/poll-mib",
+          "method": "GET",
+          "accept": "application/json",
+          "contentType": "application/json",
+          "terminationCondition": "$.output.response.body.search_status == 'DONE' ? true : false;",
+          "pollingInterval": "10",
+          "pollingStrategy": "FIXED",
+          "encode": true,
+          "headers": {
+            "ngrok-skip-browser-warning": true
+          },
+          "body": {
+            "key": "value"
+          }
+        }
+      }
+    },
+    {
+      "name": "get_order_status_from_warehouse",
+      "taskReferenceName": "get_order_status_from_warehouse_ref",
+      "description": "Polling search_id task",
+      "type": "SIMPLE",
+      "inputParameters": {
+        "order_id": "${workflow.input.order_id}"
+      },
+      "retryCount": 3,
+      "retryLogic": "FIXED",
+      "retryDelaySeconds": 10,
+      "timeoutSeconds": 60,
+      "timeoutPolicy": "TIME_OUT_WF",
+      "responseTimeoutSeconds": 30
+    }    
+  ],
+  "outputParameters": {
+    "numOrdersFetched": "${fetch_new_orders_from_db_ref.output.numOrders}"
+  }
+}

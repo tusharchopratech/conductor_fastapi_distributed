@@ -1,0 +1,3 @@
+import os
+BASE_URL_MS_WAREHOUSE = os.getenv("BASE_URL_MS_WAREHOUSE")
+BASE_URL_MS_VENDOR = os.getenv("BASE_URL_MS_VENDOR")

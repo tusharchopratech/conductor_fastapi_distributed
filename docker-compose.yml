@@ -1,0 +1,44 @@
+services:
+  order:
+    build: ./ms_order
+    ports:
+      - "80"
+    networks:
+      - mynet
+    volumes:
+      - ./ms_order:/app
+    deploy:
+      mode: replicated
+      replicas: 2
+    env_file:
+      - .env
+
+  warehouse:
+    build: ./ms_warehouse
+    ports:
+      - "80"
+    networks:
+      - mynet
+    volumes:
+      - ./ms_warehouse:/app
+    deploy:
+      mode: replicated
+      replicas: 1
+    env_file:
+      - .env
+
+  nginx:
+    image: nginx:latest
+    ports:
+      - "80:80"
+      - "81:81"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - order
+    networks:
+      - mynet
+
+networks:
+  mynet:
+    driver: bridge

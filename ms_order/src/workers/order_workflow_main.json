@@ -1,0 +1,67 @@
+{
+  "name": "order_submission_workflow",
+  "description": "Workflow to submit order, track progress and complete order.",
+  "version": 1,
+  "inputParameters": [
+    "order_id"
+  ],
+  "tasks": [
+    {
+      "name": "submit_an_order_to_warehouse_loop",
+      "taskReferenceName": "submit_an_order_to_warehouse_loop_ref",
+      "description": "Task to fetch order details and submit to warehouse.",
+      "type": "DO_WHILE",
+      "inputParameters": {
+        "order_id": "${workflow.input.order_id}"
+      },
+      "loopCondition": "$.submit_an_order_to_warehouse_ref.result=='123'",
+      "loopOver": [
+        {
+          "name": "poll_wait",
+          "taskReferenceName": "poll_wait_ref",
+          "type": "WAIT",
+          "inputParameters": {
+            "duration": "5s"
+          }
+        },
+        {
+          "name": "submit_an_order_to_warehouse",
+          "taskReferenceName": "submit_an_order_to_warehouse_ref",
+          "type": "SIMPLE",
+          "inputParameters": {
+            "order_id": "${workflow.input.order_id}"
+          },
+          "asyncComplete": false,
+          "taskDefinition": {
+            "responseTimeoutSeconds": 30,
+            "timeoutSeconds":30,
+            "retryCount": 30,
+            "totalTimeoutSeconds": 45,
+            "pollTimeoutSeconds": 30,
+            "timeoutPolicy": "RETRY"
+          }
+        },
+        {
+          "name": "get_order_status_from_warehouse",
+          "taskReferenceName": "get_order_status_from_warehouse_ref",
+          "type": "SIMPLE",
+          "inputParameters": {
+            "order_id": "${workflow.input.order_id}"
+          },
+          "asyncComplete": false,
+          "taskDefinition": {
+            "responseTimeoutSeconds": 30,
+            "timeoutSeconds":30,
+            "retryCount": 30,
+            "totalTimeoutSeconds": 45,
+            "pollTimeoutSeconds": 30,
+            "timeoutPolicy": "RETRY"
+          }
+        }
+      ]
+    }    
+  ],
+  "outputParameters": {
+    "numOrdersFetched": "${fetch_new_orders_from_db_ref.output.numOrders}"
+  }
+}

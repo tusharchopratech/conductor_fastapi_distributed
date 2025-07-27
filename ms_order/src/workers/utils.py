@@ -30,9 +30,6 @@ def register_workflows(conductor_workerflows):
     logger.info("Workflows registered!")
 
 
-# https://orkes.io/blog/task-level-resilience/
-
-
 def setup_task_workers():
     task_handler = TaskHandler(configuration=configuration, scan_for_annotated_workers=True)
     multiprocessing.set_start_method("fork", force=True)

@@ -49,18 +49,20 @@ def order_picker_outbox() -> str:
 @worker_task(task_definition_name="submit_an_order_to_warehouse")
 def submit_an_order_to_warehouse(order_id: str) -> str:
     db = next(get_db())
+
     order = db.query(Order).filter(Order.id == order_id).first()
     data = {"order_id": order.id, "product_names": order.product_names.split(",")}
-    # if random.randint(0,1) == 1:
-    #     raise Exception(f"Fake Random Exception, 'order_id': {order_id}")
 
     response = requests.post(BASE_URL_MS_WAREHOUSE + "order", json=data)
     response.raise_for_status()
+
     warehouse_tracking_id = response.json()["tracking_id"]
     order.warehouse_tracking_id = warehouse_tracking_id
-    db.commit()
+
     logger.info(
         f"Warehouse Request Accepted | 'order_id' : {order_id} | 'warehouse_tracking_id' : {warehouse_tracking_id}"
     )
+    
+    db.commit()
     db.close()
     return {"warehouse_tracking_id": warehouse_tracking_id}

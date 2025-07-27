@@ -1,24 +1,37 @@
 import requests
-import random
+import logging
 from conductor.client.worker.worker_task import worker_task
-from database import get_db, Product
+from database import get_db, Order
+from envs import BASE_URL_MS_SUPPLIER, BASE_URL_MS_ORDER
 
-@worker_task(task_definition_name='submit_an_products_to_vendor')
-def submit_an_order_to_warehouse(order_id: str) -> str:
-    
+logger = logging.getLogger(__name__)
+
+
+@worker_task(task_definition_name="poll_supplier")
+def poll_supplier(warehouse_tracking_id: str) -> str:
+
     db = next(get_db())
-    
-    products = db.query(Product).filter(Product.status == "PENDING").all()
-    unshipped_products = []
-    for product in products:
-        unshipped_products.append(
-            {
-                "name": product.name,
-                "product_id": product.id
-            }
+    unfinished_order = db.query(Order).filter(Order.id == warehouse_tracking_id).first()
+    response = requests.get(f"{BASE_URL_MS_SUPPLIER}order/{unfinished_order.supplier_tracking_id}")
+    response.raise_for_status()
+    supplier_order_status = response.json()["status"]
+
+    logger.info(
+        f"Order warehouse_tracking_id: {warehouse_tracking_id} Supplier State - {supplier_order_status}"
+    )
+    if supplier_order_status == "DONE":
+        unfinished_order.status = "DONE"
+        db.flush()
+
+        response = requests.put(
+            f"{BASE_URL_MS_ORDER}order",
+            json={"warehouse_tracking_id": warehouse_tracking_id, "status": supplier_order_status},
         )
-    
-    if random.random():
-        raise Exception("Oops some Fake random Exception occured.")
-    
-    # requests.post
+        response.raise_for_status()
+
+        db.commit()
+        logger.info("Completeing warehouse_tracking_id: {warehouse_tracking_id}")
+        return "STOP"
+
+    db.close()
+    return "KEEP_GOING"

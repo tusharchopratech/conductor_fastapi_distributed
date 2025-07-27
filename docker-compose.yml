@@ -9,7 +9,7 @@ services:
       - ./ms_order:/app
     deploy:
       mode: replicated
-      replicas: 2
+      replicas: 1
     env_file:
       - .env
 
@@ -27,15 +27,32 @@ services:
     env_file:
       - .env
 
-  nginx:
+  supplier:
+    build: ./ms_supplier
+    ports:
+      - "80"
+    networks:
+      - mynet
+    volumes:
+      - ./ms_supplier:/app
+    deploy:
+      mode: replicated
+      replicas: 1
+    env_file:
+      - .env
+
+  myapp:
     image: nginx:latest
     ports:
-      - "80:80"
-      - "81:81"
+      - "8000:80"
+      - "8001:81"
+      - "8002:82"
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf:ro
     depends_on:
+      - warehouse
       - order
+      - supplier
     networks:
       - mynet
 

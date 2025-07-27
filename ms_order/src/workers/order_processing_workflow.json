@@ -1,0 +1,45 @@
+{
+  "name": "order_submission_workflow",
+  "description": "Workflow to submit order, track progress and complete order.",
+  "version": 1,
+  "inputParameters": [
+    "order_id"
+  ],
+  "tasks": [
+    {
+      "name": "submit_an_order_to_warehouse",
+      "taskReferenceName": "submit_an_order_to_warehouse_ref",
+      "description": "Task to fetch order details and submit to warehouse.",
+      "type": "SIMPLE",
+      "inputParameters": {
+        "order_id": "${workflow.input.order_id}"
+      }
+    },
+    {
+      "name": "poll_supplier_loop",
+      "taskReferenceName": "poll_supplier_loop_ref",
+      "description": "Task to pick order and submit to warehouse.",
+      "type": "DO_WHILE",
+      "loopCondition": "$.poll_supplier_ref.result=='KEEP_GOING'",
+      "loopOver": [
+        {
+          "name": "poll_wait",
+          "taskReferenceName": "poll_wait_ref",
+          "type": "WAIT",
+          "inputParameters": {
+            "duration": "15s"
+          }
+        },
+        {
+          "name": "poll_supplier",
+          "taskReferenceName": "poll_supplier_ref",
+          "type": "SIMPLE",
+          "asyncComplete": false,
+          "inputParameters": {
+            "warehouse_tracking_id": "${submit_an_order_to_warehouse_ref.output.warehouse_tracking_id}"
+          }
+        }
+      ]
+    } 
+  ]
+}

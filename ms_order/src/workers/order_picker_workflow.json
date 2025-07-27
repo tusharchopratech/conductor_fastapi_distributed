@@ -1,6 +1,6 @@
 {
   "name": "order_picker_outbox_workflow",
-  "description": "Workflow for order picker outbox call.",
+  "description": "Workflow to pick unplaced order and start order processing workflow.",
   "version": 1,
   "tasks": [
     {
@@ -8,14 +8,14 @@
       "taskReferenceName": "order_picker_outbox_task_loop_ref",
       "description": "Task to pick order and submit to warehouse.",
       "type": "DO_WHILE",
-      "loopCondition": "$.order_picker_outbox_ref.result=='123'",
+      "loopCondition": "$.order_picker_outbox_ref.result=='KEEP_GOING'",
       "loopOver": [
         {
           "name": "poll_wait",
           "taskReferenceName": "poll_wait_ref",
           "type": "WAIT",
           "inputParameters": {
-            "duration": "10s"
+            "duration": "15s"
           }
         },
         {

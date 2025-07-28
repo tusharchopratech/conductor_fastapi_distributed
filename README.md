@@ -1,1 +1,4 @@
-# conductor_fastapi_distributed
+# Conductor Fstapi Distributed
+
+
+![System Diagram](diagram.png)
